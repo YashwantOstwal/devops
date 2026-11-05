@@ -103,8 +103,8 @@ jobs:
       - name: Set AKS context
         uses: azure/aks-set-context@v5
         with:
-          resource-group: ${{ vars.AZURE_RESOURCE_GROUP }}
-          cluster-name: ${{ vars.AZURE_AKS_CLUSTER_NAME }}
+          resource-group: 'my-devops-rg'
+          cluster-name: 'my-aks-cluster'
           admin: 'false'
           use-kubelogin: 'true'
 
