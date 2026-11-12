@@ -29,5 +29,11 @@ public class AppController {
                 "version", "1.0.1",
                 "environment", environment);
     }
+    
+    @GetMapping("/api/quality-demo")
+    public String qualityDemo() {
+        String value = null;
+        return value.toUpperCase(); // SonarQube should flag the null dereference
+    }
 
 }
