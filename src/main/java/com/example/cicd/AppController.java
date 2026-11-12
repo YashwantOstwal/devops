@@ -29,4 +29,10 @@ public class AppController {
                 "version", "1.0.1",
                 "environment", environment);
     }
+
+    @GetMapping("/api/quality-demo")
+    public String qualityDemo() {
+        String value = null;
+        return value.length(); // Sonar should flag this line
+    }
 }
