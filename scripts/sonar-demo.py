@@ -1,5 +1,6 @@
 """Provision only the disposable localhost server used by sonar-demo.yml."""
 import base64
+import http.client
 import json
 import os
 from pathlib import Path
@@ -34,7 +35,7 @@ def setup():
         try:
             if request('system/status').get('status') == 'UP':
                 break
-        except (urllib.error.URLError, TimeoutError):
+        except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.HTTPException):
             pass
         time.sleep(2)
     else:
@@ -57,6 +58,9 @@ def setup():
 
 
 def evidence():
+    if not os.environ.get('SONAR_TOKEN'):
+        print('Server setup failed; no analysis evidence is available.')
+        return
     auth = 'Bearer ' + os.environ['SONAR_TOKEN']
     output = Path('sonar-evidence')
     output.mkdir(exist_ok=True)
