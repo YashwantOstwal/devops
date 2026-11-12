@@ -28,7 +28,7 @@ jobs:
           sudo sysctl -w vm.max_map_count=524288
           docker run -d --name sonar-demo -p 127.0.0.1:9000:9000 \
             -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
-            sonarqube:community@sha256:4e43d3eaae924eadb3b4f1060a57c3a830ed687a9a1eec84ce7063c29e2c8686
+            sonarqube:25.1.0.102122-community@sha256:47e573f85879254dafd7be9845f750155f33de8a6f33542015c31ce050917059
       - name: Create project and required overall reliability gate
         run: python3 scripts/sonar-demo.py setup
       - name: Run application tests and coverage
