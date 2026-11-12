@@ -9,7 +9,8 @@ flowchart LR
     A[Developer pushes code] --> B[GitHub Repository]
     B --> C[GitHub Actions workflow]
     C --> D[Maven: build + test]
-    D --> E[Docker build + tag]
+    D --> Q[SonarQube quality gate]
+    Q --> E[Docker build + tag]
     E --> F[Push image to GHCR]
     F --> G[Kubernetes deployment]
     G --> H[LoadBalancer service]
@@ -66,7 +67,7 @@ The GitHub Actions workflow performs the following stages:
 4. Install Java 17 and Maven dependencies.
 5. Run the automated test suite.
 6. Package the application into a JAR file.
-7. Build the Docker image.
+7. Require a passing SonarQube quality gate before building the Docker image.
 8. Push the image to GitHub Container Registry.
 9. Authenticate to Azure.
 10. Update the AKS deployment with the new image.
@@ -74,29 +75,15 @@ The GitHub Actions workflow performs the following stages:
 
 The deployment files are in the `k8s/` folder.
 
-### Security scanning choice
+### Required SonarQube quality gate
 
-Gitleaks was selected for this coursework because the most important immediate CI/CD security risk is accidentally committing credentials, tokens, private keys, or connection strings. The `secret-scan` job runs before the build job and blocks image publication and deployment if a secret is detected. SonarQube is useful for maintainability, bugs, and code-quality metrics, but it requires a server or SonarCloud project and is less directly related to this small repository's primary release risk.
+Gitleaks checks for leaked secrets; SonarQube analyzes bugs, vulnerabilities, and code quality. Maven generates JaCoCo coverage, then the scanner waits for the quality gate. A failed gate or unavailable/misconfigured SonarQube blocks image publication and production deployment. Only passing pushes to `main` deploy; pull requests run tests without publishing images.
+
+**One-time setup is required:** configure the project, quality gate, `SONAR_TOKEN` secret, and repository variables using [SONARQUBE.md](SONARQUBE.md). That guide includes a deliberate-bug demonstration and local verification commands.
 
 ### GitHub and Azure configuration
 
-The deployment job uses GitHub OIDC federation; it does not require a stored Azure client secret. Configure an Entra application/service principal with a federated credential whose subject is:
-
-```text
-repo:josondev@163281456/DevOps-Cia-2@1438010085:ref:refs/heads/main
-```
-
-Grant that identity only the required AKS deployment permissions. In the GitHub repository, add these Actions **variables**:
-
-| Variable | Value |
-|---|---|
-| `AZURE_CLIENT_ID` | Entra application (client) ID |
-| `AZURE_TENANT_ID` | Azure tenant ID |
-| `AZURE_SUBSCRIPTION_ID` | Azure subscription ID |
-| `AZURE_RESOURCE_GROUP` | Resource group containing the AKS cluster |
-| `AZURE_AKS_CLUSTER_NAME` | AKS cluster name |
-
-The workflow publishes the image to the public GHCR package `ghcr.io/josondev/cicd-demo`, so AKS can pull it without a registry credential.
+The current workflow uses repository secrets `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_TENANT_ID`, and `AZURE_SUBSCRIPTION_ID`. It deploys to `my-aks-cluster` in `my-devops-rg`. Ensure the GHCR package is accessible to AKS and the `cicd-demo` namespace exists. The historical deployment details below describe an earlier environment; confirm your current target in the workflow.
 
 ## Live Azure deployment
 
@@ -144,8 +131,8 @@ ansible-playbook -i ansible/inventory/hosts.ini ansible/playbook.yml
 ## Deployment checklist
 
 - GitHub repository configured with the correct workflow permissions.
-- Azure OIDC identity federated to the repository's `main` branch.
-- Cluster, resource group, and identity values stored as GitHub Actions variables.
+- Azure identity secrets configured and authorized for the target AKS cluster.
+- SonarQube project and quality gate configured using [SONARQUBE.md](SONARQUBE.md).
 - GHCR package visibility set to public for unauthenticated AKS image pulls.
 - A custom domain and TLS ingress are not configured in this coursework demo.
 

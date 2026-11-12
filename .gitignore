@@ -5,4 +5,5 @@ target/
 .DS_Store
 .git/
 *.log
+__pycache__/
 docs/

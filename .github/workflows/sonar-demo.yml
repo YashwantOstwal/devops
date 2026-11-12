@@ -1,0 +1,62 @@
+name: SonarQube bug and fix demonstration
+
+on:
+  push:
+    branches: [sonar-demo]
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SONAR_HOST_URL: http://localhost:9000
+      SONAR_PROJECT_KEY: cicd-demo
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Start temporary SonarQube
+        run: |
+          sudo sysctl -w vm.max_map_count=524288
+          docker run -d --name sonar-demo -p 127.0.0.1:9000:9000 \
+            -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
+            sonarqube:community@sha256:4e43d3eaae924eadb3b4f1060a57c3a830ed687a9a1eec84ce7063c29e2c8686
+      - name: Create project and required overall reliability gate
+        run: python3 scripts/sonar-demo.py setup
+      - name: Run application tests and coverage
+        run: mvn -B -ntp clean verify
+      - name: SonarQube analysis and required quality gate
+        # This throwaway Community project analyzes one branch, without PR metadata.
+        run: env -u GITHUB_ACTIONS bash scripts/sonar-scan.sh
+      - name: Capture quality gate and detected issues
+        if: always()
+        run: python3 scripts/sonar-demo.py evidence
+      - name: Save evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonar-evidence-${{ github.sha }}
+          path: |
+            sonar-evidence/
+            target/surefire-reports/
+            target/site/jacoco/
+      - name: Server diagnostics and cleanup
+        if: always()
+        run: |
+          docker logs --tail 100 sonar-demo
+          docker rm -f -v sonar-demo
+
+  release-eligibility:
+    needs: quality-gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm release is allowed
+        run: echo 'Quality gate passed. This demo does not deploy to production.'
