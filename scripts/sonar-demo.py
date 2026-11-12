@@ -47,8 +47,10 @@ def setup():
     auth = basic(password)
     request('projects/create', {'project': PROJECT, 'name': 'CI/CD Bug Demonstration'}, auth)
     # Pin the rule under demonstration: built-in profiles change across releases.
-    profile = request('qualityprofiles/create', {'language': 'java',
-                      'name': 'Demo Java null safety'}, auth)['profiles'][0]
+    request('qualityprofiles/create', {'language': 'java',
+            'name': 'Demo Java null safety'}, auth)
+    profiles = request('qualityprofiles/search?language=java', auth=auth)['profiles']
+    profile = next(p for p in profiles if p['name'] == 'Demo Java null safety')
     request('qualityprofiles/activate_rule', {'key': profile['key'],
             'rule': 'java:S2259'}, auth)
     request('qualityprofiles/add_project', {'language': 'java',
