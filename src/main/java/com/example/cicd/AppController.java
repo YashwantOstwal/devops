@@ -30,10 +30,10 @@ public class AppController {
                 "environment", environment);
     }
     
-    // @GetMapping("/api/quality-demo")
-    // public String qualityDemo() {
-    //     String value = null;
-    //     return value.toUpperCase(); // SonarQube should flag the null dereference
-    // }
+    @GetMapping("/api/quality-demo")
+    public String qualityDemo() {
+        String value = null;
+        return value.toUpperCase(); // SonarQube should flag the null dereference
+    }
 
 }
