@@ -30,10 +30,10 @@ public class AppController {
                 "environment", environment);
     }
     
-    // @GetMapping("/api/quality-demo")
-    // public String qualityDemo() {
-    //     String value = null;
-    //     return value.toUpperCase(); 
-    // }
+    @GetMapping("/api/quality-demo")
+    public String qualityDemo() {
+        String value = null;
+        return value.toUpperCase(); 
+    }
 
 }
